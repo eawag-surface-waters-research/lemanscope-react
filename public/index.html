@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Mapping insitu transparency data with remote sensing products for the Lemanscope project"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      .placeholder {
+        background-color: white;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        color: black;
+      }
+      .placeholder img {
+        width: 340px;
+      }
+      .pagecenter {
+        height: 80vh;
+        width: 100vw;
+        text-align: center;
+        display: table-cell;
+        vertical-align: middle;
+      }
+
+      .pagecenter .pagecontent {
+        width: 340px;
+        max-width: 90vw;
+        margin: auto;
+        position: relative;
+      }
+      .warning {
+        margin-top: 30px;
+        font-size: 30px;
+      }
+      .loader {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: block;
+        margin: 15px auto;
+        position: relative;
+        color: #fff;
+        box-sizing: border-box;
+        animation: animloader 1s linear infinite alternate;
+      }
+
+      @keyframes animloader {
+        0% {
+          box-shadow: -38px -12px, -14px 0, 14px 0, 38px 0;
+        }
+        33% {
+          box-shadow: -38px 0px, -14px -12px, 14px 0, 38px 0;
+        }
+        66% {
+          box-shadow: -38px 0px, -14px 0, 14px -12px, 38px 0;
+        }
+        100% {
+          box-shadow: -38px 0, -14px 0, 14px 0, 38px -12px;
+        }
+      }
+    </style>
+    <title>Lemanscope Mapping App</title>
+  </head>
+  <body>
+    <noscript>
+      <div class="placeholder">
+        <div class="pagecenter">
+          <div class="pagecontent">
+            <div class="warning">
+              You need to enable JavaScript to run this app.
+            </div>
+          </div>
+        </div>
+      </div>
+    </noscript>
+    <div id="root"></div>
+  </body>
+</html>

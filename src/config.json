@@ -1,0 +1,59 @@
+{
+  "sencast_bucket": "https://eawagrs.s3.eu-central-1.amazonaws.com",
+  "layers": [
+    {
+      "id": 0,
+      "type": "sencast_tiff",
+      "active": false,
+      "description": "Secchi depth processed from Sentinel 3 data using the @1@ python package. See the QAA algorithm by Lee et al. for details.",
+      "links": {
+        "1": [
+          "SenCast",
+          "https://github.com/eawag-surface-waters-research/sencast"
+        ]
+      },
+      "properties": {
+        "model": "Sentinel3",
+        "lake": "geneva",
+        "parameter": "secchi",
+        "metadata": "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_Zsd_lee.json",
+        "unit": "m",
+        "display": "tiff",
+        "depth": false,
+        "period": false,
+        "options": {
+          "paletteName": "cc chl",
+          "zIndex": 2,
+          "opacity": 1,
+          "convolve": 2
+        }
+      }
+    },
+    {
+      "id": 1,
+      "type": "sentinel_hub_wms",
+      "active": false,
+      "description": "RGB real color Sentinel 2 images provided by @1@.",
+      "links": {
+        "1": ["Sentinel-Hub", "https://www.sentinel-hub.com/"]
+      },
+      "properties": {
+        "model": "Sentinel2",
+        "lake": "geneva",
+        "parameter": "realcolor",
+        "metadata": "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel2/geneva_Z490.json",
+        "wms": "https://services.sentinel-hub.com/ogc/wms/a595b5c3-8963-4076-98ad-5cbe7e9d7999",
+        "unit": "",
+        "display": "wms",
+        "depth": false,
+        "period": false,
+        "options": {
+          "layer": "TRUE_COLOR",
+          "gain": 1,
+          "gamma": 1,
+          "zIndex": 0
+        }
+      }
+    }
+  ]
+}

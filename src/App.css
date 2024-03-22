@@ -1,0 +1,104 @@
+/* Lemanscope Master CSS */
+
+
+/* Fonts */
+
+@font-face {
+  font-family: "exo";
+  src: url("fonts/exo/Exo-Italic-VariableFont_wght.ttf") format("truetype-variations");
+  font-weight: 1 999;
+}
+
+:root {
+  --sidebar-width: 400px;
+  --cell-size: 45px;
+  --e-global-color-primary: #04133E;
+  --e-global-color-secondary: #0457E7;
+  --e-global-color-text: #04133E;
+  --e-global-color-accent: #00EB3C;
+  --e-global-color-subtle-accent: #026e3d;
+  --e-global-color-732b564: #F5F1ED;
+  --e-global-color-05f99e9: #FFFFFF;
+}
+
+.main .sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: var(--sidebar-width);
+  background-color: var(--e-global-color-primary);
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.main .sidebar .custom-css-datepicker {
+  width: 100%;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker {
+  background-color: var(--e-global-color-primary);
+  border: none;
+  width: 100%;
+  font-size: 18px;
+  height: 400px;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  font-size: 18px;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day-name,
+.react-datepicker__day,
+.react-datepicker__time-name {
+  color: var(--e-global-color-732b564);
+  width: var(--cell-size);
+  height: var(--cell-size);
+  line-height: var(--cell-size);
+  border-radius: var(--cell-size);
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day--disabled,
+.react-datepicker__month-text--disabled,
+.react-datepicker__quarter-text--disabled,
+.react-datepicker__year-text--disabled {
+  opacity: 0.5;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day--keyboard-selected,
+.react-datepicker__month-text--keyboard-selected,
+.react-datepicker__quarter-text--keyboard-selected,
+.react-datepicker__year-text--keyboard-selected {
+  background-color: var(--e-global-color-accent);
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day:hover,
+.react-datepicker__month-text:hover,
+.react-datepicker__quarter-text:hover,
+.react-datepicker__year-text:hover {
+  background-color: var(--e-global-color-subtle-accent);
+  border-radius: var(--cell-size);
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__header {
+  background-color: var(--e-global-color-primary);
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  color: var(--e-global-color-732b564);
+}
+
+
+.main .map {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: calc(100% - var(--sidebar-width));
+}
