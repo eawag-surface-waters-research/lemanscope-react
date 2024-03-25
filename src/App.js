@@ -105,9 +105,10 @@ class App extends Component {
     var { data: sentinel3 } = await axios.get(
       "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_Zsd_lee.json"
     );
-    /*var { data: observations } = await axios.get(
+    var { data: observations } = await axios.get(
       "https://www.eyeonwater.org/api/observations?period=120&offset=0&limit=10000&sort=desc&bbox=46.20%2C6.14%2C46.53%2C6.94&bboxVersion=1.3.0"
-    );*/
+    );
+    console.log(observations)
     var max_pixels = d3.max(sentinel3.map((m) => parseFloat(m.p)));
     sentinel3 = sentinel3.map((m) => {
       m.unix = this.parseDate(m.dt).getTime();
