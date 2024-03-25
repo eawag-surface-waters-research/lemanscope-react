@@ -42,7 +42,8 @@ class Basemap extends Component {
             this.find(layers, "id", update.id),
             this.map,
             datetime,
-            this.layerStore
+            this.layerStore,
+            products
           );
         } else if (update.event === "removeLayer") {
           removeLayer(
@@ -65,6 +66,7 @@ class Basemap extends Component {
       maxBounds: bounds,
       maxBoundsViscosity: 0.75,
       zoomSnap: 0.1,
+      showCursorLocation: true,
     }).fitBounds(bounds);
     this.map.doubleClickZoom.disable();
     var basemap = L.tileLayer(

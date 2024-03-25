@@ -69,14 +69,6 @@ export const dateName = (YYYYMMDD, language, Translations) => {
   return `${day} ${Translations.axis[language].months[month]} ${year}`;
 };
 
-const formatDepth = (number) => {
-  const stringNumber = number.toString();
-  if (!stringNumber.includes(".")) {
-    return stringNumber + ".0";
-  }
-  return stringNumber;
-};
-
 export const formatDateYYYYMMDD = (d) => {
   const date = new Date(d);
   const year = date.getFullYear();
@@ -85,30 +77,6 @@ export const formatDateYYYYMMDD = (d) => {
   return `${year}${month}${day}`;
 };
 
-const formatDate = (datetime, offset = 0) => {
-  var a = new Date(datetime).getTime();
-  a = new Date(a + offset);
-  var year = a.getUTCFullYear();
-  var month = a.getUTCMonth() + 1;
-  var date = a.getUTCDate();
-  var hour = a.getUTCHours();
-  var minute = a.getMinutes();
-  return `${String(year)}${month < 10 ? "0" + month : month}${
-    date < 10 ? "0" + date : date
-  }${hour < 10 ? "0" + hour : hour}${minute < 10 ? "0" + minute : minute}`;
-};
-
-const formatDateBucket = (datetime, offset = 0) => {
-  var a = new Date(datetime).getTime();
-  a = new Date(a + offset);
-  var year = a.getUTCFullYear();
-  var month = a.getUTCMonth() + 1;
-  var date = a.getUTCDate();
-  var hour = a.getUTCHours();
-  return `${String(year)}${month < 10 ? "0" + month : month}${
-    date < 10 ? "0" + date : date
-  }${hour < 10 ? "0" + hour : hour}00`;
-};
 
 const formatDateIso = (datetime) => {
   var year = datetime.getFullYear();
@@ -140,16 +108,6 @@ const parseDate = (dateString) => {
   return date;
 };
 
-const parseAlplakesDate = (str) => {
-  const d = new Date(
-    `${str.slice(0, 4)}-${str.slice(4, 6)}-${str.slice(6, 8)}T${str.slice(
-      8,
-      10
-    )}:${str.slice(10, 12)}:00.000+00:00`
-  );
-  return String(d.getTime());
-};
-
 const findClosest = (array, key, value) => {
   let closest = null;
   let minDiff = Infinity;
@@ -163,49 +121,6 @@ const findClosest = (array, key, value) => {
   }
 
   return closest;
-};
-
-const closestDate = (targetDate, dateList) => {
-  let closest = Infinity;
-  let closestDate = null;
-  dateList.forEach((date) => {
-    const diff = Math.abs(parseInt(date) - parseInt(targetDate));
-    if (diff < closest) {
-      closest = diff;
-      closestDate = date;
-    }
-  });
-  return closestDate;
-};
-
-const getTimestepData = (data, datetime) => {
-  var keys = Object.keys(data)
-    .map((d) => parseInt(d))
-    .sort((a, b) => a - b);
-  var max = Math.max(...keys);
-  var min = Math.min(...keys);
-  if (datetime >= max) {
-    return {
-      interpolateValue: 0,
-      newData: [data[String(max)], data[String(max)]],
-    };
-  } else if (datetime <= min) {
-    return {
-      interpolateValue: 0,
-      newData: [data[String(min)], data[String(min)]],
-    };
-  } else {
-    var low, high;
-    for (let i = 0; i < keys.length - 1; i++) {
-      low = keys[i];
-      high = keys[i + 1];
-      if (high > datetime) break;
-    }
-    return {
-      interpolateValue: (datetime - low) / (high - low),
-      newData: [data[String(low)], data[String(high)]],
-    };
-  }
 };
 
 const round = (value, decimals) => {
@@ -265,9 +180,15 @@ export const addLayer = async (layer, map, datetime, layerStore, products) => {
   loaded();
 };
 
-export const updateLayer = async (layer, map, datetime, layerStore) => {
+export const updateLayer = async (
+  layer,
+  map,
+  datetime,
+  layerStore,
+  products
+) => {
   if (layer.type === "sencast_tiff") {
-    await updateSencastTiff(layer, layerStore, map, datetime);
+    await updateSencastTiff(layer, layerStore, datetime, map, products);
   } else if (layer.type === "sentinel_hub_wms") {
     await updateSentinelHubWms(layer, layerStore, map, datetime);
   }
@@ -283,7 +204,11 @@ export const removeLayer = async (layer, map, layerStore) => {
 };
 
 const addSencastTiff = async (layer, layerStore, datetime, map, products) => {
-  var image = findClosest(products, "unix", datetime);
+  var image = findClosest(
+    products[layer.properties.model.toLowerCase()],
+    "unix",
+    datetime
+  );
   await plotSencastTiff(image.url, layer, layerStore, map);
 };
 
@@ -321,10 +246,10 @@ const plotSencastTiff = async (url, layer, layerStore, map) => {
 
 const updateSencastTiff = async (
   layer,
-  dataStore,
   layerStore,
+  datetime,
   map,
-  datetime
+  products
 ) => {
   var path = [
     layer.type,
@@ -346,48 +271,16 @@ const updateSencastTiff = async (
     }
   }
 
-  var metadata = getNested(dataStore, path);
+  const image = findClosest(products[layer.properties.model.toLowerCase()], "unix", datetime);
+  layer.properties.options.image = image;
+  layer.properties.options.dataMin = round(image.min, 2);
+  layer.properties.options.dataMax = round(image.max, 2);
+  layer.properties.options.updateDate = false;
+  loading("Downloading satellite image");
+  var { data } = await axios.get(image.url, {
+    responseType: "arraybuffer",
+  });
 
-  var data = false;
-  if (
-    "date" in layer.properties.options &&
-    "updateDate" in layer.properties.options &&
-    layer.properties.options.updateDate
-  ) {
-    const image = findClosest(
-      metadata,
-      "unix",
-      layer.properties.options.date.getTime()
-    );
-
-    layer.properties.options.image = image;
-    layer.properties.options.min = round(image.min, 2);
-    layer.properties.options.max = round(image.max, 2);
-    layer.properties.options.dataMin = round(image.min, 2);
-    layer.properties.options.dataMax = round(image.max, 2);
-    layer.properties.options.updateDate = false;
-    loading("Downloading satellite image");
-    ({ data } = await axios.get(image.url, {
-      responseType: "arraybuffer",
-    }));
-  }
-
-  if (
-    "image" in layer.properties.options &&
-    "updateImage" in layer.properties.options &&
-    layer.properties.options.updateImage
-  ) {
-    const image = layer.properties.options.image;
-    layer.properties.options.min = round(image.min, 2);
-    layer.properties.options.max = round(image.max, 2);
-    layer.properties.options.dataMin = round(image.min, 2);
-    layer.properties.options.dataMax = round(image.max, 2);
-    layer.properties.options.updateImage = false;
-    loading("Downloading satellite image");
-    ({ data } = await axios.get(image.url, {
-      responseType: "arraybuffer",
-    }));
-  }
   loading("Processing satellite image");
 
   var leaflet_layer = getNested(layerStore, path);

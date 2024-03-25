@@ -11,7 +11,7 @@
 
 :root {
   --sidebar-width: 400px;
-  --cell-size: 45px;
+  --cell-size: 40px;
   --e-global-color-primary: #04133E;
   --e-global-color-secondary: #0457E7;
   --e-global-color-text: #04133E;
@@ -19,6 +19,14 @@
   --e-global-color-subtle-accent: #026e3d;
   --e-global-color-732b564: #F5F1ED;
   --e-global-color-05f99e9: #FFFFFF;
+}
+
+.leaflet-tooltip {
+  background-color: var(--e-global-color-primary);
+  color: var(--e-global-color-05f99e9);
+  border-radius: 12px;
+  padding: 5px 8px;
+  font-size: 16px;
 }
 
 .main .sidebar {
@@ -60,28 +68,106 @@
   height: var(--cell-size);
   line-height: var(--cell-size);
   border-radius: var(--cell-size);
+  position: relative;
+  vertical-align: middle;
+  margin: 6px;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .date {
+  z-index: 1;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .percentage {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 0;
+  border: 2px solid var(--e-global-color-subtle-accent);
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .percentage::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  height: 80%;
+  background-color: var(--e-global-color-primary);
+  border-radius: 50%;
+  z-index: -1
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .observations {
+  position: absolute;
+  font-size: 10px;
+  top: -4px;
+  right: -5px;
+  background-color: var(--e-global-color-primary);
+  border: 2px solid var(--e-global-color-subtle-accent);
+  border-radius: 22px;
+  line-height: 15px;
+  width: 15px;
 }
 
 .main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day--disabled,
 .react-datepicker__month-text--disabled,
 .react-datepicker__quarter-text--disabled,
 .react-datepicker__year-text--disabled {
-  opacity: 0.5;
+  color: #082678;
+  background-color: var(--e-global-color-primary) !important;
+  border: none;
 }
 
 .main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day--keyboard-selected,
 .react-datepicker__month-text--keyboard-selected,
 .react-datepicker__quarter-text--keyboard-selected,
 .react-datepicker__year-text--keyboard-selected {
-  background-color: var(--e-global-color-accent);
+  background-color: transparent;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range,
+.react-datepicker__month-text--selected,
+.react-datepicker__month-text--in-selecting-range,
+.react-datepicker__month-text--in-range,
+.react-datepicker__quarter-text--selected,
+.react-datepicker__quarter-text--in-selecting-range,
+.react-datepicker__quarter-text--in-range,
+.react-datepicker__year-text--selected,
+.react-datepicker__year-text--in-selecting-range,
+.react-datepicker__year-text--in-range {
+  background-color: transparent;
+  font-weight: bold;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day--selected .percentage {
+  border-color: var(--e-global-color-accent);
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day--selected .observations {
+  border-color: var(--e-global-color-accent);
 }
 
 .main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day:hover,
 .react-datepicker__month-text:hover,
 .react-datepicker__quarter-text:hover,
 .react-datepicker__year-text:hover {
-  background-color: var(--e-global-color-subtle-accent);
-  border-radius: var(--cell-size);
+  background-color: transparent;
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day:hover .percentage {
+  border-color: var(--e-global-color-accent);
+}
+
+.main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__day:hover .observations {
+  border-color: var(--e-global-color-accent);
 }
 
 .main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__header {

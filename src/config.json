@@ -2,7 +2,7 @@
   "sencast_bucket": "https://eawagrs.s3.eu-central-1.amazonaws.com",
   "layers": [
     {
-      "id": 0,
+      "id": "tiff",
       "type": "sencast_tiff",
       "active": false,
       "description": "Secchi depth processed from Sentinel 3 data using the @1@ python package. See the QAA algorithm by Lee et al. for details.",
@@ -22,15 +22,18 @@
         "depth": false,
         "period": false,
         "options": {
-          "paletteName": "cc chl",
+          "paletteName": "navia reverse",
           "zIndex": 2,
           "opacity": 1,
-          "convolve": 2
+          "convolve": 2,
+          "min": 0,
+          "max": 20,
+          "unit": "m"
         }
       }
     },
     {
-      "id": 1,
+      "id": "wms",
       "type": "sentinel_hub_wms",
       "active": false,
       "description": "RGB real color Sentinel 2 images provided by @1@.",
