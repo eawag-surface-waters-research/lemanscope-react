@@ -4,7 +4,10 @@ import * as d3 from "d3";
 import DatePicker from "react-datepicker";
 import Basemap from "./components/leaflet/basemap";
 import "react-datepicker/dist/react-datepicker.css";
-import { keepDuplicatesWithHighestValue } from "./functions";
+import {
+  keepDuplicatesWithHighestValue,
+  sortOccurrencesByDate,
+} from "./functions";
 import CONFIG from "./config.json";
 import "./App.css";
 
@@ -21,7 +24,7 @@ class App extends Component {
   updated = () => {
     this.setState({ updates: [] });
   };
-  parseDate = (dateString) => {
+  parseDatetime = (dateString) => {
     const year = dateString.slice(0, 4);
     const month = parseInt(dateString.slice(4, 6)) - 1; // month is zero-indexed
     const day = dateString.slice(6, 8);
@@ -31,12 +34,22 @@ class App extends Component {
     const date = new Date(year, month, day, hour, minute, second);
     return date;
   };
+  parseDate = (dateString) => {
+    const year = dateString.slice(0, 4);
+    const month = parseInt(dateString.slice(4, 6)) - 1; // month is zero-indexed
+    const day = dateString.slice(6, 8);
+    const date = new Date(year, month, day, 8);
+    return date;
+  };
   compareDates = (date1, date2) => {
     return date1 - date2;
   };
   setDatetime = (datetime) => {
     var { updates, satellite } = this.state;
-    updates.push({ event: "updateLayer", id: satellite });
+    updates.push(
+      { event: "addLayer", id: satellite },
+      { event: "addLayer", id: "eyeonwater" }
+    );
     this.setState({ datetime, updates });
   };
   onMonthChange = (event) => {
@@ -94,47 +107,74 @@ class App extends Component {
         element = document.querySelectorAll(className);
       }
       if (element.length > 0) {
-        let deg = Math.ceil(p / 100 * 180) + 180
+        let deg = Math.ceil((p / 100) * 180) + 180;
         element[0].title = `${p}% pixel coverage and ${obs} observations`;
-        element[0].innerHTML = `<div class="percentage" style="background: conic-gradient(transparent 180deg, var(--e-global-color-subtle-accent) 180deg ${deg}deg, transparent ${deg}deg 360deg);"></div></div><div class="observations">${obs}</div><div class="date">${element[0].innerHTML}</div>`;
+        if (obs > 0) {
+          element[0].innerHTML = `<div class="percentage" style="background: conic-gradient(transparent 180deg, var(--e-global-color-subtle-accent) 180deg ${deg}deg, transparent ${deg}deg 360deg);"></div></div><div class="observations">${obs}</div><div class="date">${element[0].innerHTML}</div>`;
+        } else {
+          element[0].innerHTML = `<div class="percentage" style="background: conic-gradient(transparent 180deg, var(--e-global-color-subtle-accent) 180deg ${deg}deg, transparent ${deg}deg 360deg);"></div></div><div class="date">${element[0].innerHTML}</div>`;
+        }
       }
     }
   };
   async componentDidMount() {
     var { products, satellite } = this.state;
+    var observations = {};
     var { data: sentinel3 } = await axios.get(
       "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_Zsd_lee.json"
     );
-    var { data: observations } = await axios.get(
-      "https://www.eyeonwater.org/api/observations?period=120&offset=0&limit=10000&sort=desc&bbox=46.20%2C6.14%2C46.53%2C6.94&bboxVersion=1.3.0"
-    );
-    console.log(observations)
     var max_pixels = d3.max(sentinel3.map((m) => parseFloat(m.p)));
     sentinel3 = sentinel3.map((m) => {
-      m.unix = this.parseDate(m.dt).getTime();
+      m.unix = this.parseDatetime(m.dt).getTime();
       m.date = m.dt.slice(0, 8);
       m.url = CONFIG.sencast_bucket + "/" + m.k;
-      m.time = this.parseDate(m.dt);
-      let split = m.k.split("_");
-      m.tile = split[split.length - 1].split(".")[0];
-      m.satellite = split[0].split("/")[2];
+      m.time = this.parseDatetime(m.dt);
       m.percent = Math.ceil((parseFloat(m.vp) / max_pixels) * 100);
-      m.ave = Math.round(parseFloat(m.mean) * 100) / 100;
       return m;
     });
     products["sentinel3"] = sentinel3;
     var dates = keepDuplicatesWithHighestValue(sentinel3, "date", "percent");
+
+    try {
+      ({ data: observations } = await axios.get(
+        "https://www.eyeonwater.org/api/observations?period=120&offset=0&limit=10000&sort=desc&bbox=46.20%2C6.14%2C46.53%2C6.94&bboxVersion=1.3.0"
+      ));
+      observations = observations.filter((o) => o.water.sd_depth > 0);
+      observations = sortOccurrencesByDate(observations);
+      products["eyeonwater"] = observations;
+    } catch (e) {
+      console.error("Failed to collect data from Eyeonwater");
+    }
     var available = dates.map((d) => {
+      let obs = 0;
+      if (Object.keys(observations).includes(d.date)) {
+        obs = observations[d.date].length;
+      }
       return {
         time: d.time,
+        date: d.date,
         percent: d.percent,
-        obs: Math.floor(Math.random() * 99) + 1,
+        obs: obs,
       };
     });
-    var includeDates = dates.map((m) => m.time);
+    var currentDates = dates.map((m) => m.date);
+    for (let obs of Object.keys(observations)) {
+      if (!currentDates.includes(obs)) {
+        available.push({
+          time: this.parseDate(obs),
+          date: obs,
+          percent: 0,
+          obs: observations[obs].length,
+        });
+      }
+    }
+    var includeDates = available.map((m) => m.time);
     includeDates.sort(this.compareDates);
     var datetime = includeDates[includeDates.length - 1];
-    var updates = [{ event: "addLayer", id: satellite }];
+    var updates = [
+      { event: "addLayer", id: satellite },
+      { event: "addLayer", id: "eyeonwater" },
+    ];
     this.addCssRules(datetime, available);
     this.setState({
       products,
@@ -145,8 +185,7 @@ class App extends Component {
     });
   }
   render() {
-    var { updates, layers, datetime, includeDates, products } =
-      this.state;
+    var { updates, layers, datetime, includeDates, products } = this.state;
     const locale = {
       localize: {
         day: (n) => ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"][n],

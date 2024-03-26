@@ -16,6 +16,7 @@
   --e-global-color-secondary: #0457E7;
   --e-global-color-text: #04133E;
   --e-global-color-accent: #00EB3C;
+  --e-global-color-accent-opacity: #00eb3b94;
   --e-global-color-subtle-accent: #026e3d;
   --e-global-color-732b564: #F5F1ED;
   --e-global-color-05f99e9: #FFFFFF;
@@ -27,6 +28,13 @@
   border-radius: 12px;
   padding: 5px 8px;
   font-size: 16px;
+  font-family: "Helvetica Neue", helvetica, arial, sans-serif;
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background-color: var(--e-global-color-primary);
+  color: var(--e-global-color-05f99e9);
+  font-family: "Helvetica Neue", helvetica, arial, sans-serif;
 }
 
 .main .sidebar {
@@ -172,6 +180,7 @@
 
 .main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__header {
   background-color: var(--e-global-color-primary);
+  border: none;
 }
 
 .main .sidebar .custom-css-datepicker .react-datepicker .react-datepicker__current-month,

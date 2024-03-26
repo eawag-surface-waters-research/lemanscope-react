@@ -375,7 +375,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   display: block;
   text-align: center;
   text-decoration: none;
-  color: var(--box-font-color);
+  color: white;
 }
 
 .leaflet-bar a,
@@ -420,7 +420,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 /* zoom control */
 
 .leaflet-control-zoom {
-  background-color: var(--background-color);
+  background-color: var(--e-global-color-primary);
 }
 
 .leaflet-control-zoom-in,

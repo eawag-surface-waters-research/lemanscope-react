@@ -3,6 +3,9 @@ import * as d3 from "d3";
 import axios from "axios";
 import COLORS from "../colors/colors.json";
 import CONFIG from "../../config.json";
+import "leaflet.markercluster";
+import "./css/markercluster.css";
+import "./css/markerclusterdefault.css";
 import "./leaflet_raster";
 import "./leaflet_streamlines";
 import "./leaflet_floatgeotiff";
@@ -33,6 +36,18 @@ const checkNested = (obj, args) => {
 
 const getNested = (obj, args) => {
   return args.reduce((acc, arg) => acc && acc[arg], obj);
+};
+
+const hex = (c) => {
+  var s = "0123456789abcdef";
+  var i = parseInt(c, 10);
+  if (i === 0 || isNaN(c)) return "00";
+  i = Math.round(Math.min(Math.max(0, i), 255));
+  return s.charAt((i - (i % 16)) / 16) + s.charAt(i % 16);
+};
+
+const convertToHex = (rgb) => {
+  return hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
 };
 
 const addMinutes = (date, minutes) => {
@@ -77,7 +92,6 @@ export const formatDateYYYYMMDD = (d) => {
   return `${year}${month}${day}`;
 };
 
-
 const formatDateIso = (datetime) => {
   var year = datetime.getFullYear();
   var month = datetime.getMonth() + 1;
@@ -108,6 +122,13 @@ const parseDate = (dateString) => {
   return date;
 };
 
+const formatDateToYYYYMMDD = (date) => {
+  const year = date.getFullYear().toString();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Add leading zero if needed
+  const day = date.getDate().toString().padStart(2, "0"); // Add leading zero if needed
+  return year + month + day;
+};
+
 const findClosest = (array, key, value) => {
   let closest = null;
   let minDiff = Infinity;
@@ -119,6 +140,26 @@ const findClosest = (array, key, value) => {
       closest = array[i];
     }
   }
+  if (closest.date === formatDateToYYYYMMDD(value)) {
+    return closest;
+  } else {
+    return false;
+  }
+};
+
+const findClosestValue = (listOfObjects, targetValue, key) => {
+  let closest = null;
+  let minDifference = Infinity;
+
+  listOfObjects.forEach((obj) => {
+    if (obj.hasOwnProperty(key)) {
+      const difference = Math.abs(parseFloat(obj[key]) - targetValue);
+      if (difference < minDifference) {
+        minDifference = difference;
+        closest = obj;
+      }
+    }
+  });
 
   return closest;
 };
@@ -173,132 +214,66 @@ const loaded = () => {
 
 export const addLayer = async (layer, map, datetime, layerStore, products) => {
   if (layer.type === "sencast_tiff") {
-    await addSencastTiff(layer, layerStore, datetime, map, products);
+    await plotSencastTiff(layer, layerStore, datetime, map, products);
   } else if (layer.type === "sentinel_hub_wms") {
     await addSentinelHubWms(layer, layerStore, datetime, map);
+  } else if (layer.type === "eyeonwater_points") {
+    plotEyeonwater(layer, layerStore, datetime, map, products);
   }
   loaded();
 };
 
-export const updateLayer = async (
-  layer,
-  map,
-  datetime,
-  layerStore,
-  products
-) => {
-  if (layer.type === "sencast_tiff") {
-    await updateSencastTiff(layer, layerStore, datetime, map, products);
-  } else if (layer.type === "sentinel_hub_wms") {
-    await updateSentinelHubWms(layer, layerStore, map, datetime);
-  }
-  loaded();
-};
-
-export const removeLayer = async (layer, map, layerStore) => {
-  if (layer.type === "sencast_tiff") {
-    await removeSencastTiff(layer, layerStore, map);
-  } else if (layer.type === "sentinel_hub_wms") {
-    removeSentinelHubWms(layer, layerStore, map);
-  }
-};
-
-const addSencastTiff = async (layer, layerStore, datetime, map, products) => {
-  var image = findClosest(
+const plotSencastTiff = async (layer, layerStore, datetime, map, products) => {
+  var path = [
+    layer.type,
+    layer.properties.model,
+    layer.properties.lake,
+    layer.properties.parameter,
+  ];
+  const image = findClosest(
     products[layer.properties.model.toLowerCase()],
     "unix",
     datetime
   );
-  await plotSencastTiff(image.url, layer, layerStore, map);
-};
-
-const plotSencastTiff = async (url, layer, layerStore, map) => {
-  var path = [
-    layer.type,
-    layer.properties.model,
-    layer.properties.lake,
-    layer.properties.parameter,
-  ];
-  var options = {};
-  if ("options" in layer.properties) {
-    options = layer.properties.options;
-    if ("paletteName" in layer.properties.options) {
-      layer.properties.options.palette =
-        COLORS[layer.properties.options.paletteName];
-      options["palette"] = COLORS[layer.properties.options.paletteName];
+  if (image) {
+    var options = {};
+    if ("options" in layer.properties) {
+      options = layer.properties.options;
+      if ("paletteName" in layer.properties.options) {
+        layer.properties.options.palette =
+          COLORS[layer.properties.options.paletteName];
+        options["palette"] = COLORS[layer.properties.options.paletteName];
+      }
+      if ("unit" in layer.properties) {
+        options["unit"] = layer.properties.unit;
+      }
     }
-    if (!("opacity" in layer.properties.options)) {
-      options["opacity"] = 1;
-    }
-    if (!("convolve" in layer.properties.options)) {
-      options["convolve"] = 0;
-    }
-  }
-  loading("Downloading satellite image");
-  var { data } = await axios.get(url, {
-    responseType: "arraybuffer",
-  });
 
-  loading("Processing satellite image");
-  var leaflet_layer = L.floatgeotiff(data, options).addTo(map);
-  setNested(layerStore, path, leaflet_layer);
-};
+    layer.properties.options.image = image;
+    layer.properties.options.dataMin = round(image.min, 2);
+    layer.properties.options.dataMax = round(image.max, 2);
+    layer.properties.options.updateDate = false;
+    loading("Downloading satellite image");
+    var { data } = await axios.get(image.url, {
+      responseType: "arraybuffer",
+    });
 
-const updateSencastTiff = async (
-  layer,
-  layerStore,
-  datetime,
-  map,
-  products
-) => {
-  var path = [
-    layer.type,
-    layer.properties.model,
-    layer.properties.lake,
-    layer.properties.parameter,
-  ];
+    loading("Processing satellite image");
 
-  var options = {};
-  if ("options" in layer.properties) {
-    options = layer.properties.options;
-    if ("paletteName" in layer.properties.options) {
-      layer.properties.options.palette =
-        COLORS[layer.properties.options.paletteName];
-      options["palette"] = COLORS[layer.properties.options.paletteName];
+    var leaflet_layer = getNested(layerStore, path);
+    if (leaflet_layer !== null && leaflet_layer !== undefined) {
+      leaflet_layer.update(data, options);
+    } else {
+      leaflet_layer = L.floatgeotiff(data, options).addTo(map);
+      setNested(layerStore, path, leaflet_layer);
     }
-    if ("unit" in layer.properties) {
-      options["unit"] = layer.properties.unit;
+  } else {
+    leaflet_layer = getNested(layerStore, path);
+    if (leaflet_layer !== null && leaflet_layer !== undefined) {
+      map.removeLayer(leaflet_layer);
+      setNested(layerStore, path, null);
     }
   }
-
-  const image = findClosest(products[layer.properties.model.toLowerCase()], "unix", datetime);
-  layer.properties.options.image = image;
-  layer.properties.options.dataMin = round(image.min, 2);
-  layer.properties.options.dataMax = round(image.max, 2);
-  layer.properties.options.updateDate = false;
-  loading("Downloading satellite image");
-  var { data } = await axios.get(image.url, {
-    responseType: "arraybuffer",
-  });
-
-  loading("Processing satellite image");
-
-  var leaflet_layer = getNested(layerStore, path);
-  if (leaflet_layer !== null && leaflet_layer !== undefined) {
-    leaflet_layer.update(data, options);
-  }
-};
-
-const removeSencastTiff = (layer, layerStore, map) => {
-  var path = [
-    layer.type,
-    layer.properties.model,
-    layer.properties.lake,
-    layer.properties.parameter,
-  ];
-  var leaflet_layer = getNested(layerStore, path);
-  map.removeLayer(leaflet_layer);
-  setNested(layerStore, path, null);
 };
 
 const addSentinelHubWms = async (
@@ -355,44 +330,81 @@ const addSentinelHubWms = async (
   setNested(layerStore, path, leaflet_layer);
 };
 
-const updateSentinelHubWms = async (
-  layer,
-  dataStore,
-  layerStore,
-  map,
-  datetime
-) => {
+const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
   var path = [
     layer.type,
     layer.properties.model,
     layer.properties.lake,
     layer.properties.parameter,
   ];
-  var metadata = getNested(dataStore, path);
+  var colors = COLORS[layer.properties.options.paletteName];
   var leaflet_layer = getNested(layerStore, path);
-
-  const image = findClosest(
-    metadata,
-    "unix",
-    layer.properties.options.date.getTime()
-  );
-  layer.properties.options.updateDate = false;
-
-  leaflet_layer.setParams({
-    time: formatWmsDate(image.time),
-    gain: layer.properties.options.gain,
-    gamma: layer.properties.options.gamma,
-  });
-};
-
-const removeSentinelHubWms = (layer, layerStore, map) => {
-  var path = [
-    layer.type,
-    layer.properties.model,
-    layer.properties.lake,
-    layer.properties.parameter,
-  ];
-  var leaflet_layer = getNested(layerStore, path);
-  map.removeLayer(leaflet_layer);
-  setNested(layerStore, path, null);
+  if (leaflet_layer === null || leaflet_layer === undefined) {
+    leaflet_layer = L.markerClusterGroup().addTo(map);
+  }
+  leaflet_layer.clearLayers();
+  var date = formatDateToYYYYMMDD(datetime);
+  var observations = products[layer.properties.model.toLowerCase()];
+  if (date in observations) {
+    for (let observation of observations[date]) {
+      let sd = parseFloat(observation.water.sd_depth);
+      let point = Math.max(
+        0,
+        Math.min(
+          1,
+          sd /
+            (parseFloat(layer.properties.options.max) -
+              parseFloat(layer.properties.options.min))
+        )
+      );
+      let color = findClosestValue(colors, point, "point");
+      var marker = L.circleMarker(
+        [observation.location.lat, observation.location.lng],
+        {
+          color: "white",
+          fillColor: "#" + convertToHex(color.color),
+          fillOpacity: 1,
+          radius: 10,
+        }
+      ).addTo(leaflet_layer);
+      marker.bindTooltip(observation.water.sd_depth + "m", {
+        direction: "top",
+      });
+      var popup = ['<div class="obs-table"><table><tbody>'];
+      popup.push(
+        `<tr><th>Profondeur de secchi</th><td>${observation.water.sd_depth} m</td></tr>`
+      );
+      popup.push(
+        `<tr><th>Temps</th><td>${observation.image.date_photo}</td></tr>`
+      );
+      popup.push(
+        `<tr><th>Latitude</th><td>${
+          Math.round(parseFloat(observation.location.lat) * 100) / 100
+        }</td></tr>`
+      );
+      popup.push(
+        `<tr><th>Longitide</th><td>${
+          Math.round(parseFloat(observation.location.lng) * 100) / 100
+        }</td></tr>`
+      );
+      if ("fu_value" in observation.water) {
+        popup.push(
+          `<tr><th>Forel-Ule (User)</th><td>${observation.water.fu_value}</td></tr>`
+        );
+      }
+      if ("fu_processed" in observation.water) {
+        popup.push(
+          `<tr><th>Forel-Ule (Auto)</th><td>${observation.water.fu_processed}</td></tr>`
+        );
+      }
+      if ("p_temperature" in observation.water) {
+        popup.push(
+          `<tr><th>Température</th><td>${observation.water.p_temperature} °C</td></tr>`
+        );
+      }
+      popup.push("</table></tbody></div>");
+      marker.bindPopup(popup.join(""));
+    }
+  }
+  setNested(layerStore, path, leaflet_layer);
 };

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import L from "leaflet";
-import { addLayer, updateLayer, removeLayer } from "./functions";
+import { addLayer } from "./functions";
 import "./leaflet_geotiff";
 import "./leaflet_colorpicker";
 import "./leaflet_customtooltip";
@@ -37,20 +37,6 @@ class Basemap extends Component {
               }, try a different time period.`
             );
           }
-        } else if (update.event === "updateLayer") {
-          updateLayer(
-            this.find(layers, "id", update.id),
-            this.map,
-            datetime,
-            this.layerStore,
-            products
-          );
-        } else if (update.event === "removeLayer") {
-          removeLayer(
-            this.find(layers, "id", update.id),
-            this.map,
-            this.layerStore
-          );
         }
       }
       this.map.triggerLayersUpdate();
@@ -60,13 +46,14 @@ class Basemap extends Component {
     this.layerStore = {};
     var bounds = L.latLngBounds([
       [46.192, 6.118],
-      [46.533, 6.943],
+      [46.633, 6.943],
     ]);
     this.map = L.map("map", {
       maxBounds: bounds,
-      maxBoundsViscosity: 0.75,
+      maxBoundsViscosity: 0.01,
       zoomSnap: 0.1,
       showCursorLocation: true,
+      minZoom: 9,
     }).fitBounds(bounds);
     this.map.doubleClickZoom.disable();
     var basemap = L.tileLayer(
