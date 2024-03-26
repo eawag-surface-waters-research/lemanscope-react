@@ -10,6 +10,7 @@ import {
 } from "./functions";
 import CONFIG from "./config.json";
 import "./App.css";
+import Colorbar from "./components/colors/colorbar";
 
 class App extends Component {
   state = {
@@ -186,6 +187,7 @@ class App extends Component {
   }
   render() {
     var { updates, layers, datetime, includeDates, products } = this.state;
+    const { min, max, paletteName, unit } = layers[0].properties.options;
     const locale = {
       localize: {
         day: (n) => ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"][n],
@@ -231,6 +233,13 @@ class App extends Component {
             layers={layers}
             datetime={datetime}
             products={products}
+          />
+          <Colorbar
+            min={min}
+            max={max}
+            paletteName={paletteName}
+            text={"Profondeur de secchi"}
+            unit={unit}
           />
         </div>
       </div>

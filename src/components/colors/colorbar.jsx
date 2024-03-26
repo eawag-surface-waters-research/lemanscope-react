@@ -1,9 +1,10 @@
 import React, { Component } from "react";
-import "./colorbar.css";
+import COLORS from "./colors.json";
 
 class Colorbar extends Component {
   render() {
-    var { min, max, palette, unit, text, onClick, id } = this.props;
+    var { min, max, paletteName, unit, text } = this.props;
+    var palette = COLORS[paletteName];
     var colors = [];
     for (let p of palette) {
       colors.push(
@@ -12,19 +13,19 @@ class Colorbar extends Component {
     }
     var background = `linear-gradient(90deg, ${colors.join(", ")})`;
     return (
-      <tr className="colorbar" onClick={() => onClick(id)}>
-        <td>
+      <div className="colorbar">
+        <div className="value left">
           {min}
           {unit}
-        </td>
-        <td className="bar" style={{ background: background }}>
+        </div>
+        <div className="bar" style={{ background: background }}>
           {text}
-        </td>
-        <td>
+        </div>
+        <div className="value right">
           {max}
           {unit}
-        </td>
-      </tr>
+        </div>
+      </div>
     );
   }
 }
