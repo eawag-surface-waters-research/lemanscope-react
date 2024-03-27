@@ -49,9 +49,7 @@ class Basemap extends Component {
       [46.633, 6.943],
     ]);
     this.map = L.map("map", {
-      maxBounds: bounds,
-      maxBoundsViscosity: 0.01,
-      zoomSnap: 0.1,
+      zoomSnap: 0.5,
       showCursorLocation: true,
       minZoom: 9,
     }).fitBounds(bounds);
@@ -66,6 +64,7 @@ class Basemap extends Component {
     );
     this.map.addLayer(basemap);
     this.layer = L.layerGroup([]).addTo(this.map);
+    L.control.scale().addTo(this.map);
   }
 
   render() {

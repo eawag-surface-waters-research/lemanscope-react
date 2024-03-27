@@ -340,7 +340,46 @@ const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
   var colors = COLORS[layer.properties.options.paletteName];
   var leaflet_layer = getNested(layerStore, path);
   if (leaflet_layer === null || leaflet_layer === undefined) {
-    leaflet_layer = L.markerClusterGroup().addTo(map);
+    leaflet_layer = L.markerClusterGroup({
+      iconCreateFunction: function (cluster) {
+        var mean = 0;
+        cluster.getAllChildMarkers().forEach(function (marker) {
+          mean += marker.options.value;
+        });
+        mean /= cluster.getChildCount(); // Calculate mean
+        mean = Math.round(mean * 10) / 10;
+        let point = Math.max(
+          0,
+          Math.min(
+            1,
+            mean /
+              (parseFloat(layer.properties.options.max) -
+                parseFloat(layer.properties.options.min))
+          )
+        );
+        let color = findClosestValue(colors, point, "point");
+        return new L.divIcon({
+          html: `<div style="background-color:${
+            "#" + convertToHex(color.color)
+          }"></div>`,
+          className: " marker-cluster",
+          iconSize: new L.point(20, 20),
+        });
+      },
+    }).addTo(map);
+    leaflet_layer.on("clustermouseover", function (event) {
+      var cluster = event.layer;
+      var mean = 0;
+      cluster.getAllChildMarkers().forEach(function (marker) {
+        mean += marker.options.value;
+      });
+      mean /= cluster.getChildCount();
+      mean = Math.round(mean * 10) / 10;
+      cluster.bindTooltip(`${mean}m (${cluster.getChildCount()})`, {
+        direction: "top",
+      });
+      cluster.openTooltip();
+    });
   }
   leaflet_layer.clearLayers();
   var date = formatDateToYYYYMMDD(datetime);
@@ -365,6 +404,7 @@ const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
           fillColor: "#" + convertToHex(color.color),
           fillOpacity: 1,
           radius: 10,
+          value: observation.water.sd_depth,
         }
       ).addTo(leaflet_layer);
       marker.bindTooltip(observation.water.sd_depth + "m", {

@@ -212,7 +212,7 @@
   z-index: 999;
   right: 22px;
   bottom: 22px;
-  width: calc(100% - 44px);
+  width: calc(100% - 160px);
   max-width: 400px;
 }
 
@@ -242,6 +242,27 @@
   line-height: 28px;
   text-align: center;
   color: #ffffff96;
+}
+
+.main .map .marker-cluster div {
+  width: 17px;
+  height: 17px;
+  border: 3px solid white;
+}
+
+@media screen and (max-width: 800px) {
+  .main .sidebar .custom-css-datepicker .react-datepicker .observations {
+    position: absolute;
+    font-size: 10px;
+    top: -9px;
+    right: -8px;
+    background-color: var(--e-global-color-primary);
+    border: 2px solid var(--e-global-color-subtle-accent);
+    border-radius: 22px;
+    line-height: 15px;
+    width: 15px;
+    z-index: 2;
+  }
 }
 
 @media screen and (max-width: 660px) {
