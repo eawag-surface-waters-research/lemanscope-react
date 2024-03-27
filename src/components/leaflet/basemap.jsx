@@ -55,11 +55,10 @@ class Basemap extends Component {
     }).fitBounds(bounds);
     this.map.doubleClickZoom.disable();
     var basemap = L.tileLayer(
-      "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-grau/default/current/3857/{z}/{x}/{y}.jpeg",
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       {
-        maxZoom: 19,
-        attribution:
-          '<a title="Swiss Federal Office of Topography" href="https://www.swisstopo.admin.ch/">swisstopo</a>',
+        attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
+        maxZoom: 16,
       }
     );
     this.map.addLayer(basemap);
