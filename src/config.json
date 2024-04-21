@@ -18,7 +18,7 @@
           "zIndex": 2,
           "opacity": 1,
           "min": 0,
-          "max": 20,
+          "max": 12,
           "unit": "m"
         }
       }
@@ -42,7 +42,7 @@
           "opacity": 1,
           "convolve": 2,
           "min": 0,
-          "max": 20,
+          "max": 12,
           "unit": "m"
         }
       }
