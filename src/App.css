@@ -45,6 +45,111 @@
   font-family: "Helvetica Neue", helvetica, arial, sans-serif;
 }
 
+.main .modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--e-global-color-primary);
+  width: 600px;
+  height: 350px;
+  z-index: 9;
+  color: var(--e-global-color-05f99e9);
+  border: 2px solid var(--e-global-color-05f99e9);
+  font-family: Inter, sans-serif;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.main .modal.hide {
+  display: none;
+}
+
+.main .modal .close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 50px;
+  line-height: 28px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.main .modal .content {
+  position: relative;
+  padding: 12px;
+}
+
+.main .modal .content .top {
+  position: relative;
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 67px;
+}
+
+
+.main .modal .content .left {
+  position: relative;
+  display: inline-block;
+  width: calc(50% - 95px);
+  text-align: right;
+  font-size: 18px;
+}
+
+
+.main .modal .content .center {
+  position: relative;
+  display: inline-block;
+  width: 190px;
+  text-align: center;
+}
+
+.main .modal .content .center .percentage {
+  margin: auto;
+  border-radius: 50%;
+  z-index: 0;
+  border: 5px solid var(--e-global-color-subtle-accent);
+  background: conic-gradient(transparent 180deg, var(--e-global-color-subtle-accent) 180deg 320deg, transparent 320deg 360deg);
+  width: 150px;
+  height: 150px;
+  box-sizing: border-box;
+}
+
+.main .modal .content .center .percentage .date {
+  z-index: 1;
+  position: relative;
+  font-size: 60px;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+  text-align: center;
+  line-height: 116px;
+  background-color: var(--e-global-color-primary);
+  margin: 12px;
+  border-radius: 50%;
+}
+
+.main .modal .content .center .percentage .observations {
+  position: absolute;
+  font-size: 27px;
+  top: 0px;
+  right: 16px;
+  background-color: var(--e-global-color-primary);
+  border: 3px solid var(--e-global-color-subtle-accent);
+  border-radius: 22px;
+  line-height: 40px;
+  width: 40px;
+  z-index: 9;
+}
+
+.main .modal .content .right {
+  position: relative;
+  display: inline-block;
+  width: calc(50% - 95px);
+  vertical-align: top;
+  font-size: 18px;
+}
+
+
 .main .sidebar {
   position: fixed;
   left: 0;
@@ -281,5 +386,50 @@
     height: 320px;
     margin: auto;
     width: unset;
+  }
+
+  .main .modal {
+    height: 200px;
+  }
+
+  .main .modal .content .center {
+    width: 120px;
+  }
+
+  .main .modal .content .center .percentage {
+    border: 3px solid var(--e-global-color-subtle-accent);
+    width: 75px;
+    height: 75px;
+  }
+
+  .main .modal .content .center .percentage .date {
+    font-size: 29px;
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+    line-height: 57px;
+    margin: 6px;
+  }
+
+  .main .modal .content .center .percentage .observations {
+    font-size: 16px;
+    top: -6px;
+    right: 16px;
+    border: 2px solid var(--e-global-color-subtle-accent);
+    line-height: 25px;
+    width: 25px;
+  }
+
+  .main .modal .content .top {
+    margin-bottom: 39px;
+  }
+
+  .main .modal .content .left {
+    font-size: 14px;
+    width: calc(50% - 60px);
+  }
+
+  .main .modal .content .right {
+    font-size: 14px;
+    width: calc(50% - 60px);
   }
 }

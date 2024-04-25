@@ -21,9 +21,15 @@ class App extends Component {
     includeDates: [],
     satellite: "tiff",
     available: [],
+    modal: false,
   };
   updated = () => {
     this.setState({ updates: [] });
+  };
+  closeModal = () => {
+    if (this.state.modal) {
+      this.setState({ modal: false });
+    }
   };
   parseDatetime = (dateString) => {
     const year = dateString.slice(0, 4);
@@ -119,7 +125,13 @@ class App extends Component {
     }
   };
   async componentDidMount() {
-    var { products, satellite } = this.state;
+    var { products, satellite, modal } = this.state;
+    console.log(JSON.parse(localStorage.getItem("visited")))
+    if (JSON.parse(localStorage.getItem("visited")) === null) {
+      modal = true;
+      localStorage.setItem("visited", JSON.stringify(true));
+    }
+
     var observations = {};
     var { data: sentinel3 } = await axios.get(
       "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_Zsd_lee.json"
@@ -178,6 +190,7 @@ class App extends Component {
     ];
     this.addCssRules(datetime, available);
     this.setState({
+      modal,
       products,
       includeDates,
       datetime,
@@ -186,7 +199,8 @@ class App extends Component {
     });
   }
   render() {
-    var { updates, layers, datetime, includeDates, products } = this.state;
+    var { updates, layers, datetime, includeDates, products, modal } =
+      this.state;
     const { min, max, paletteName, unit } = layers[0].properties.options;
     const locale = {
       localize: {
@@ -212,7 +226,21 @@ class App extends Component {
       },
     };
     return (
-      <div className="main">
+      <div className="main" onClick={this.closeModal}>
+        <div className={modal ? "modal" : "model hide"}>
+          <div className="close">&times;</div>
+          <div className="content">
+            <div className="top">Calendrier</div>
+            <div className="left">Couverture du lac sur l'image satellite</div>
+            <div className="center">
+              <div className="percentage">
+                <div className="observations">4</div>
+                <div className="date">12</div>
+              </div>
+            </div>
+            <div className="right">Nombre de mesures quotidiennes</div>
+          </div>
+        </div>
         <div className="sidebar">
           <div className="custom-css-datepicker">
             <DatePicker
