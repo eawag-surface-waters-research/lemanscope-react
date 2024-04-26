@@ -31,6 +31,9 @@ class App extends Component {
       this.setState({ modal: false });
     }
   };
+  openModal = () => {
+    this.setState({ modal: true });
+  };
   parseDatetime = (dateString) => {
     const year = dateString.slice(0, 4);
     const month = parseInt(dateString.slice(4, 6)) - 1; // month is zero-indexed
@@ -126,7 +129,7 @@ class App extends Component {
   };
   async componentDidMount() {
     var { products, satellite, modal } = this.state;
-    console.log(JSON.parse(localStorage.getItem("visited")))
+    console.log(JSON.parse(localStorage.getItem("visited")));
     if (JSON.parse(localStorage.getItem("visited")) === null) {
       modal = true;
       localStorage.setItem("visited", JSON.stringify(true));
@@ -243,6 +246,9 @@ class App extends Component {
         </div>
         <div className="sidebar">
           <div className="custom-css-datepicker">
+            <div className="instructions" onClick={this.openModal}>
+              Instructions
+            </div>
             <DatePicker
               dateFormat="dd/MM/yyyy"
               locale={locale}

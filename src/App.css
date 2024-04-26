@@ -168,6 +168,18 @@
   text-align: center;
 }
 
+.main .sidebar .custom-css-datepicker .instructions {
+  text-align: left;
+  color: white;
+  font-family: Inter, sans-serif;
+  padding-left: 9px;
+  cursor: pointer;
+}
+
+.main .sidebar .custom-css-datepicker .instructions:hover {
+  text-decoration: underline;
+}
+
 .main .sidebar .custom-css-datepicker .react-datepicker {
   background-color: var(--e-global-color-primary);
   border: none;
