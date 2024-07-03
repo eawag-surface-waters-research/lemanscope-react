@@ -20,6 +20,7 @@
   --e-global-color-subtle-accent: #026e3d;
   --e-global-color-732b564: #F5F1ED;
   --e-global-color-05f99e9: #FFFFFF;
+  --border-color: red;
 }
 
 @media screen and (max-width: 800px) {
@@ -59,6 +60,7 @@
   font-family: Inter, sans-serif;
   max-width: 100%;
   box-sizing: border-box;
+  border-radius: 8px;
 }
 
 .main .modal.hide {
@@ -73,6 +75,12 @@
   line-height: 28px;
   padding: 12px;
   cursor: pointer;
+  z-index: 9;
+  transition: 0.2s ease all;
+}
+
+.main .modal .close:hover {
+  transform: scale(1.1);
 }
 
 .main .modal .content {
@@ -172,12 +180,19 @@
   text-align: left;
   color: white;
   font-family: Inter, sans-serif;
-  padding-left: 9px;
+  padding: 0 9px;
   cursor: pointer;
+  display: inline-block;
+  border: 1px solid white;
+  font-size: 25px;
+  vertical-align: middle;
+  border-radius: 20px;
+  margin-left: 12px;
+  transition: 0.33s ease all;
 }
 
 .main .sidebar .custom-css-datepicker .instructions:hover {
-  text-decoration: underline;
+  transform: scale(1.1);
 }
 
 .main .sidebar .custom-css-datepicker .react-datepicker {
@@ -384,13 +399,13 @@
 
 @media screen and (max-width: 660px) {
   .main .map {
-    height: calc(100% - 340px);
+    height: calc(100% - 390px);
     width: 100%;
   }
 
   .main .sidebar {
     position: fixed;
-    height: 340px;
+    height: 390px;
     width: 100%;
   }
 

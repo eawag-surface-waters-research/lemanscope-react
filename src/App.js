@@ -11,6 +11,8 @@ import {
 import CONFIG from "./config.json";
 import "./App.css";
 import Colorbar from "./components/colors/colorbar";
+import Toggle from "./components/toggle/toggle";
+import InitialLoading from "./components/loading/initialloading";
 
 class App extends Component {
   state = {
@@ -19,9 +21,11 @@ class App extends Component {
     layers: CONFIG.layers,
     products: { observations: [], sentinel3: [] },
     includeDates: [],
-    satellite: "tiff",
     available: [],
     modal: false,
+    eyeonwater: {},
+    parameter: "Secchi",
+    loading: true,
   };
   updated = () => {
     this.setState({ updates: [] });
@@ -55,11 +59,19 @@ class App extends Component {
     return date1 - date2;
   };
   setDatetime = (datetime) => {
-    var { updates, satellite } = this.state;
-    updates.push(
-      { event: "addLayer", id: satellite },
-      { event: "addLayer", id: "eyeonwater" }
-    );
+    var { updates, parameter } = this.state;
+    if (parameter === "Secchi") {
+      updates.push(
+        { event: "addLayer", id: "tiff_secchi" },
+        { event: "addLayer", id: "eyeonwater_secchi" }
+      );
+    } else {
+      updates.push(
+        { event: "addLayer", id: "tiff_forelule" },
+        { event: "addLayer", id: "eyeonwater_forelule" }
+      );
+    }
+
     this.setState({ datetime, updates });
   };
   onMonthChange = (event) => {
@@ -120,25 +132,33 @@ class App extends Component {
         let deg = Math.ceil((p / 100) * 180) + 180;
         element[0].title = `${p}% pixel coverage and ${obs} observations`;
         if (obs > 0) {
-          element[0].innerHTML = `<div class="percentage" style="background: conic-gradient(transparent 180deg, var(--e-global-color-subtle-accent) 180deg ${deg}deg, transparent ${deg}deg 360deg);"></div></div><div class="observations">${obs}</div><div class="date">${element[0].innerHTML}</div>`;
+          element[0].innerHTML = `<div class="percentage" style="background: conic-gradient(transparent 180deg, var(--e-global-color-subtle-accent) 180deg ${deg}deg, transparent ${deg}deg 360deg);"></div></div><div class="observations">${obs}</div><div class="date">${day}</div>`;
         } else {
-          element[0].innerHTML = `<div class="percentage" style="background: conic-gradient(transparent 180deg, var(--e-global-color-subtle-accent) 180deg ${deg}deg, transparent ${deg}deg 360deg);"></div></div><div class="date">${element[0].innerHTML}</div>`;
+          element[0].innerHTML = `<div class="percentage" style="background: conic-gradient(transparent 180deg, var(--e-global-color-subtle-accent) 180deg ${deg}deg, transparent ${deg}deg 360deg);"></div></div><div class="date">${day}</div>`;
         }
       }
     }
   };
-  async componentDidMount() {
-    var { products, satellite, modal } = this.state;
-    console.log(JSON.parse(localStorage.getItem("visited")));
-    if (JSON.parse(localStorage.getItem("visited")) === null) {
-      modal = true;
-      localStorage.setItem("visited", JSON.stringify(true));
+  setParameter = async () => {
+    var { parameter, eyeonwater } = this.state;
+    if (parameter === "Secchi") {
+      parameter = "Couleur";
+    } else {
+      parameter = "Secchi";
     }
+    this.processData(eyeonwater, parameter);
+  };
 
-    var observations = {};
-    var { data: sentinel3 } = await axios.get(
-      "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_Zsd_lee.json"
-    );
+  processData = async (eyeonwater, parameter) => {
+    var { products } = this.state;
+    var observations = JSON.parse(JSON.stringify(eyeonwater));
+    var url =
+      "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_Zsd_lee.json";
+    if (parameter === "Couleur") {
+      url =
+        "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_forel_ule.json";
+    }
+    var { data: sentinel3 } = await axios.get(url);
     var max_pixels = d3.max(sentinel3.map((m) => parseFloat(m.p)));
     sentinel3 = sentinel3.map((m) => {
       m.unix = this.parseDatetime(m.dt).getTime();
@@ -151,16 +171,27 @@ class App extends Component {
     products["sentinel3"] = sentinel3;
     var dates = keepDuplicatesWithHighestValue(sentinel3, "date", "percent");
 
-    try {
-      ({ data: observations } = await axios.get(
-        "https://www.eyeonwater.org/api/observations?period=120&offset=0&limit=10000&sort=desc&bbox=46.20%2C6.14%2C46.53%2C6.94&bboxVersion=1.3.0"
-      ));
+    if (parameter === "Couleur") {
+      observations = observations.filter((o) => o.water.fu_processed > 0);
+      observations = observations.map((o) => {
+        if ("fu_value" in o.water) {
+          o.value = o.water.fu_value;
+        } else {
+          o.value = o.water.fu_processed;
+        }
+        return o;
+      });
+    } else {
       observations = observations.filter((o) => o.water.sd_depth > 0);
-      observations = sortOccurrencesByDate(observations);
-      products["eyeonwater"] = observations;
-    } catch (e) {
-      console.error("Failed to collect data from Eyeonwater");
+      observations = observations.map((o) => {
+        o.value = o.water.sd_depth;
+        return o;
+      });
     }
+
+    observations = sortOccurrencesByDate(observations);
+    products["eyeonwater"] = observations;
+
     var available = dates.map((d) => {
       let obs = 0;
       if (Object.keys(observations).includes(d.date)) {
@@ -187,24 +218,67 @@ class App extends Component {
     var includeDates = available.map((m) => m.time);
     includeDates.sort(this.compareDates);
     var datetime = includeDates[includeDates.length - 1];
-    var updates = [
-      { event: "addLayer", id: satellite },
-      { event: "addLayer", id: "eyeonwater" },
-    ];
+    var updates = [];
+    if (parameter === "Secchi") {
+      updates.push(
+        { event: "addLayer", id: "tiff_secchi" },
+        { event: "addLayer", id: "eyeonwater_secchi" }
+      );
+    } else {
+      updates.push(
+        { event: "addLayer", id: "tiff_forelule" },
+        { event: "addLayer", id: "eyeonwater_forelule" }
+      );
+    }
     this.addCssRules(datetime, available);
     this.setState({
-      modal,
       products,
       includeDates,
       datetime,
       updates,
       available,
+      parameter,
     });
+  };
+
+  async componentDidMount() {
+    var { modal, eyeonwater, parameter } = this.state;
+    if (JSON.parse(localStorage.getItem("visited")) === null) {
+      modal = true;
+      localStorage.setItem("visited", JSON.stringify(true));
+    }
+
+    try {
+      ({ data: eyeonwater } = await axios.get(
+        "https://www.eyeonwater.org/api/observations?period=120&offset=0&limit=10000&sort=desc&bbox=46.20%2C6.14%2C46.53%2C6.94&bboxVersion=1.3.0"
+      ));
+    } catch (e) {
+      console.error("Failed to collect data from Eyeonwater");
+    }
+
+    this.processData(eyeonwater, parameter);
+    this.setState({ modal, eyeonwater, loading: false });
   }
   render() {
-    var { updates, layers, datetime, includeDates, products, modal } =
-      this.state;
-    const { min, max, paletteName, unit } = layers[0].properties.options;
+    var {
+      updates,
+      layers,
+      datetime,
+      includeDates,
+      products,
+      modal,
+      parameter,
+      loading,
+    } = this.state;
+    var layer;
+    if (parameter === "Secchi") {
+      layer = "tiff_secchi";
+    } else {
+      layer = "tiff_forelule";
+    }
+    const { min, max, paletteName, unit, label } = layers.find(
+      (l) => l.id === layer
+    ).properties.options;
     const locale = {
       localize: {
         day: (n) => ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"][n],
@@ -234,7 +308,7 @@ class App extends Component {
           <div className="close">&times;</div>
           <div className="content">
             <div className="top">Calendrier</div>
-            <div className="left">Couverture du lac sur l'image satellite</div>
+            <div className="left">Couverture du lac sur l'image white</div>
             <div className="center">
               <div className="percentage">
                 <div className="observations">4</div>
@@ -246,8 +320,14 @@ class App extends Component {
         </div>
         <div className="sidebar">
           <div className="custom-css-datepicker">
+            <Toggle
+              left="Secchi"
+              right="Couleur"
+              onChange={this.setParameter}
+              checked={parameter === "Couleur"}
+            />
             <div className="instructions" onClick={this.openModal}>
-              Instructions
+              ?
             </div>
             <DatePicker
               dateFormat="dd/MM/yyyy"
@@ -261,6 +341,7 @@ class App extends Component {
           </div>
         </div>
         <div className="map">
+          {loading && <InitialLoading />}
           <Basemap
             updates={updates}
             updated={this.updated}
@@ -272,7 +353,7 @@ class App extends Component {
             min={min}
             max={max}
             paletteName={paletteName}
-            text={"Profondeur de secchi"}
+            text={label}
             unit={unit}
           />
         </div>
