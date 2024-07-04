@@ -174,11 +174,7 @@ class App extends Component {
     if (parameter === "Couleur") {
       observations = observations.filter((o) => o.water.fu_processed > 0);
       observations = observations.map((o) => {
-        if ("fu_value" in o.water) {
-          o.value = o.water.fu_value;
-        } else {
-          o.value = o.water.fu_processed;
-        }
+        o.value = o.water.fu_processed;
         return o;
       });
     } else {
