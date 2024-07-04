@@ -215,8 +215,6 @@ const loaded = () => {
 export const addLayer = async (layer, map, datetime, layerStore, products) => {
   if (layer.type === "sencast_tiff") {
     await plotSencastTiff(layer, layerStore, datetime, map, products);
-  } else if (layer.type === "sentinel_hub_wms") {
-    await addSentinelHubWms(layer, layerStore, datetime, map);
   } else if (layer.type === "eyeonwater_points") {
     plotEyeonwater(layer, layerStore, datetime, map, products);
   }
@@ -224,12 +222,7 @@ export const addLayer = async (layer, map, datetime, layerStore, products) => {
 };
 
 const plotSencastTiff = async (layer, layerStore, datetime, map, products) => {
-  var path = [
-    layer.type,
-    layer.properties.model,
-    layer.properties.lake,
-    layer.properties.parameter,
-  ];
+  var path = [layer.type, layer.properties.model, layer.properties.lake];
   const image = findClosest(
     products[layer.properties.model.toLowerCase()],
     "unix",
@@ -276,117 +269,60 @@ const plotSencastTiff = async (layer, layerStore, datetime, map, products) => {
   }
 };
 
-const addSentinelHubWms = async (
-  layer,
-  dataStore,
-  layerStore,
-  datetime,
-  map
-) => {
-  var path = [
-    layer.type,
-    layer.properties.model,
-    layer.properties.lake,
-    layer.properties.parameter,
-  ];
-  var metadata;
-  var image;
-  if (!checkNested(dataStore, path)) {
-    ({ data: metadata } = await axios.get(layer.properties.metadata));
-    var max_pixels = d3.max(metadata.map((m) => parseFloat(m.p)));
-    metadata = metadata.map((m) => {
-      m.unix = parseDate(m.dt).getTime();
-      m.date = m.dt.slice(0, 8);
-      m.url = CONFIG.sencast_bucket + "/" + m.k;
-      m.time = parseDate(m.dt);
-      m.percent = Math.ceil((parseFloat(m.vp) / max_pixels) * 100);
-      return m;
-    });
-    setNested(dataStore, path, metadata);
-    image = findClosest(metadata, "unix", datetime);
-    var dates = keepDuplicatesWithHighestValue(metadata, "date", "percent");
-    layer.properties.options.includeDates = dates.map((m) => m.time);
-    layer.properties.options.percentage = dates.map((m) => m.percent);
-    layer.properties.options.date = image.time;
-  } else {
-    metadata = getNested(dataStore, path);
-    image = findClosest(metadata, "unix", layer.properties.options.date);
-  }
-
-  var leaflet_layer = L.tileLayer
-    .wms(layer.properties.wms, {
-      tileSize: 512,
-      attribution:
-        '&copy; <a href="http://www.sentinel-hub.com/" target="_blank">Sentinel Hub</a>',
-      minZoom: 6,
-      maxZoom: 16,
-      preset: layer.properties.options.layer,
-      layers: layer.properties.options.layer,
-      time: formatWmsDate(layer.properties.options.date),
-      gain: layer.properties.options.gain,
-      gamma: layer.properties.options.gamma,
-    })
-    .addTo(map);
-  setNested(layerStore, path, leaflet_layer);
-};
-
 const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
-  var path = [
-    layer.type,
-    layer.properties.model,
-    layer.properties.lake,
-    layer.properties.parameter,
-  ];
+  var path = [layer.type, layer.properties.model, layer.properties.lake];
   var colors = COLORS[layer.properties.options.paletteName];
   var leaflet_layer = getNested(layerStore, path);
-  if (leaflet_layer === null || leaflet_layer === undefined) {
-    leaflet_layer = L.markerClusterGroup({
-      iconCreateFunction: function (cluster) {
-        var mean = 0;
-        cluster.getAllChildMarkers().forEach(function (marker) {
-          mean += marker.options.value;
-        });
-        mean /= cluster.getChildCount(); // Calculate mean
-        mean = Math.round(mean * 10) / 10;
-        let point = Math.max(
-          0,
-          Math.min(
-            1,
-            mean /
-              (parseFloat(layer.properties.options.max) -
-                parseFloat(layer.properties.options.min))
-          )
-        );
-        let color = findClosestValue(colors, point, "point");
-        return new L.divIcon({
-          html: `<div style="background-color:${
-            "#" + convertToHex(color.color)
-          }"></div>`,
-          className: " marker-cluster",
-          iconSize: new L.point(20, 20),
-        });
-      },
-    }).addTo(map);
-    leaflet_layer.on("clustermouseover", function (event) {
-      var cluster = event.layer;
+  if (!(leaflet_layer === null || leaflet_layer === undefined)) {
+    map.removeLayer(leaflet_layer);
+  }
+
+  leaflet_layer = L.markerClusterGroup({
+    iconCreateFunction: function (cluster) {
       var mean = 0;
       cluster.getAllChildMarkers().forEach(function (marker) {
         mean += marker.options.value;
       });
-      mean /= cluster.getChildCount();
+      mean /= cluster.getChildCount(); // Calculate mean
       mean = Math.round(mean * 10) / 10;
-      cluster.bindTooltip(`${mean}m (${cluster.getChildCount()})`, {
-        direction: "top",
+      let point = Math.max(
+        0,
+        Math.min(
+          1,
+          mean /
+            (parseFloat(layer.properties.options.max) -
+              parseFloat(layer.properties.options.min))
+        )
+      );
+      let color = findClosestValue(colors, point, "point");
+      return new L.divIcon({
+        html: `<div style="background-color:${
+          "#" + convertToHex(color.color)
+        }"></div>`,
+        className: " marker-cluster",
+        iconSize: new L.point(20, 20),
       });
-      cluster.openTooltip();
+    },
+  }).addTo(map);
+  leaflet_layer.on("clustermouseover", function (event) {
+    var cluster = event.layer;
+    var mean = 0;
+    cluster.getAllChildMarkers().forEach(function (marker) {
+      mean += marker.options.value;
     });
-  }
+    mean /= cluster.getChildCount();
+    mean = Math.round(mean * 10) / 10;
+    cluster.bindTooltip(`${mean}${layer.properties.unit} (${cluster.getChildCount()})`, {
+      direction: "top",
+    });
+    cluster.openTooltip();
+  });
   leaflet_layer.clearLayers();
   var date = formatDateToYYYYMMDD(datetime);
   var observations = products[layer.properties.model.toLowerCase()];
   if (date in observations) {
     for (let observation of observations[date]) {
-      let sd = parseFloat(observation.water.sd_depth);
+      let sd = parseFloat(observation.value);
       let point = Math.max(
         0,
         Math.min(
@@ -404,16 +340,14 @@ const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
           fillColor: "#" + convertToHex(color.color),
           fillOpacity: 1,
           radius: 10,
-          value: observation.water.sd_depth,
+          value: observation.value,
         }
       ).addTo(leaflet_layer);
-      marker.bindTooltip(observation.water.sd_depth + "m", {
+      marker.bindTooltip(observation.value + layer.properties.unit, {
         direction: "top",
       });
       var popup = ['<div class="obs-table"><table><tbody>'];
-      popup.push(
-        `<tr><th>Profondeur de secchi</th><td>${observation.water.sd_depth} m</td></tr>`
-      );
+
       popup.push(
         `<tr><th>Temps</th><td>${observation.image.date_photo}</td></tr>`
       );
@@ -427,6 +361,11 @@ const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
           Math.round(parseFloat(observation.location.lng) * 100) / 100
         }</td></tr>`
       );
+      if ("sd_depth" in observation.water && observation.water.sd_depth !== 0) {
+        popup.push(
+          `<tr><th>Profondeur de secchi</th><td>${observation.water.sd_depth} m</td></tr>`
+        );
+      }
       if ("fu_value" in observation.water) {
         popup.push(
           `<tr><th>Forel-Ule (User)</th><td>${observation.water.fu_value}</td></tr>`
@@ -440,6 +379,14 @@ const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
       if ("p_temperature" in observation.water) {
         popup.push(
           `<tr><th>Température</th><td>${observation.water.p_temperature} °C</td></tr>`
+        );
+      }
+      if (
+        "nickname" in observation.user &&
+        observation.user.nickname !== null
+      ) {
+        popup.push(
+          `<tr><th>User</th><td>${observation.user.nickname}</td></tr>`
         );
       }
       popup.push("</table></tbody></div>");

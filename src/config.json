@@ -2,7 +2,7 @@
   "sencast_bucket": "https://eawagrs.s3.eu-central-1.amazonaws.com",
   "layers": [
     {
-      "id": "eyeonwater",
+      "id": "eyeonwater_secchi",
       "type": "eyeonwater_points",
       "description": "Secchi depth measurements from Eyeonwater",
       "properties": {
@@ -24,7 +24,29 @@
       }
     },
     {
-      "id": "tiff",
+      "id": "eyeonwater_forelule",
+      "type": "eyeonwater_points",
+      "description": "Forel Ule measurements from Eyeonwater",
+      "properties": {
+        "model": "Eyeonwater",
+        "lake": "geneva",
+        "parameter": "forelule",
+        "unit": "",
+        "display": "tiff",
+        "depth": false,
+        "period": false,
+        "options": {
+          "paletteName": "Forel Ule",
+          "zIndex": 2,
+          "opacity": 1,
+          "min": 1,
+          "max": 21,
+          "unit": ""
+        }
+      }
+    },
+    {
+      "id": "tiff_secchi",
       "type": "sencast_tiff",
       "description": "Secchi depth processed from Sentinel 3 data using the Sencast python package. See the QAA algorithm by Lee et al. for details.",
       "properties": {
@@ -43,29 +65,33 @@
           "convolve": 2,
           "min": 0,
           "max": 12,
-          "unit": "m"
+          "unit": "m",
+          "label": "Profondeur de secchi"
         }
       }
     },
     {
-      "id": "wms",
-      "type": "sentinel_hub_wms",
-      "description": "RGB real color Sentinel 2 images provided by Sentinel-Hub.",
+      "id": "tiff_forelule",
+      "type": "sencast_tiff",
+      "description": "Forel Ule processed from Sentinel 3 data using the Sencast python package. See the QAA algorithm by Lee et al. for details.",
       "properties": {
-        "model": "Sentinel2",
+        "model": "Sentinel3",
         "lake": "geneva",
-        "parameter": "realcolor",
-        "metadata": "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel2/geneva_Z490.json",
-        "wms": "https://services.sentinel-hub.com/ogc/wms/a595b5c3-8963-4076-98ad-5cbe7e9d7999",
+        "parameter": "forelule",
+        "metadata": "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_forel_ule.json",
         "unit": "",
-        "display": "wms",
+        "display": "tiff",
         "depth": false,
         "period": false,
         "options": {
-          "layer": "TRUE_COLOR",
-          "gain": 1,
-          "gamma": 1,
-          "zIndex": 0
+          "paletteName": "Forel Ule",
+          "zIndex": 2,
+          "opacity": 1,
+          "convolve": 0,
+          "min": 1,
+          "max": 21,
+          "unit": "",
+          "label": "Couleur (Forel Ule)"
         }
       }
     }
