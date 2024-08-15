@@ -172,9 +172,12 @@ class App extends Component {
     var dates = keepDuplicatesWithHighestValue(sentinel3, "date", "percent");
 
     if (parameter === "Couleur") {
-      observations = observations.filter((o) => o.water.fu_processed > 0);
       observations = observations.map((o) => {
-        o.value = o.water.fu_processed;
+        if (o.water.fu_processed === null) {
+          o.value = o.water.fu_value;
+        } else {
+          o.value = o.water.fu_processed;
+        }
         return o;
       });
     } else {

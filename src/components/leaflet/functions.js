@@ -312,9 +312,12 @@ const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
     });
     mean /= cluster.getChildCount();
     mean = Math.round(mean * 10) / 10;
-    cluster.bindTooltip(`${mean}${layer.properties.unit} (${cluster.getChildCount()})`, {
-      direction: "top",
-    });
+    cluster.bindTooltip(
+      `${mean}${layer.properties.unit} (${cluster.getChildCount()})`,
+      {
+        direction: "top",
+      }
+    );
     cluster.openTooltip();
   });
   leaflet_layer.clearLayers();
@@ -361,22 +364,35 @@ const plotEyeonwater = (layer, layerStore, datetime, map, products) => {
           Math.round(parseFloat(observation.location.lng) * 100) / 100
         }</td></tr>`
       );
-      if ("sd_depth" in observation.water && observation.water.sd_depth !== 0) {
+      if (
+        "sd_depth" in observation.water &&
+        observation.water.sd_depth !== 0 &&
+        observation.water.sd_depth !== null
+      ) {
         popup.push(
           `<tr><th>Profondeur de secchi</th><td>${observation.water.sd_depth} m</td></tr>`
         );
       }
-      if ("fu_value" in observation.water) {
+      if (
+        "fu_value" in observation.water &&
+        observation.water.fu_value !== null
+      ) {
         popup.push(
           `<tr><th>Forel-Ule (User)</th><td>${observation.water.fu_value}</td></tr>`
         );
       }
-      if ("fu_processed" in observation.water) {
+      if (
+        "fu_processed" in observation.water &&
+        observation.water.fu_processed !== null
+      ) {
         popup.push(
           `<tr><th>Forel-Ule (Auto)</th><td>${observation.water.fu_processed}</td></tr>`
         );
       }
-      if ("p_temperature" in observation.water) {
+      if (
+        "p_temperature" in observation.water &&
+        observation.water.p_temperature !== null
+      ) {
         popup.push(
           `<tr><th>Température</th><td>${observation.water.p_temperature} °C</td></tr>`
         );
