@@ -248,12 +248,33 @@ class App extends Component {
     }
 
     try {
-      ({ data: eyeonwater } = await axios.get(
-        "https://www.eyeonwater.org/api/observations?period=120&offset=0&limit=10000&sort=desc&bbox=46.20%2C6.14%2C46.53%2C6.94&bboxVersion=1.3.0"
-      ));
+      var { data: bucket } = await axios.get(
+        "https://eawagrs.s3.eu-central-1.amazonaws.com/lemanscope/data.json"
+      );
+      eyeonwater = bucket.data
+      const min_date = new Date(bucket.time)
+      try {
+        var { data: new_data } = await axios.get(
+          "https://www.eyeonwater.org/api/observations?period=1&offset=0&limit=10000&sort=desc&bbox=46.20%2C6.14%2C46.53%2C6.94&bboxVersion=1.3.0"
+        );
+        for (let i = 0; i < new_data.length; i++){
+          if (new Date(new_data[i]["image"]["date_photo"].replace(" ", "T") + "Z") > min_date) {
+            eyeonwater.push(new_data[i])
+          }          
+        }
+      } catch (e) {
+        console.error("Failed to collect data from Eyeonwater");
+      }
     } catch (e) {
-      console.error("Failed to collect data from Eyeonwater");
-    }
+      console.log("Failed to collect data from bucket")
+      try {
+        ({ data: eyeonwater } = await axios.get(
+          "https://www.eyeonwater.org/api/observations?period=120&offset=0&limit=10000&sort=desc&bbox=46.20%2C6.14%2C46.53%2C6.94&bboxVersion=1.3.0"
+        ));
+      } catch (e) {
+        console.error("Failed to collect data from Eyeonwater");
+      }
+    }   
 
     this.processData(eyeonwater, parameter);
     this.setState({ modal, eyeonwater, loading: false });
