@@ -153,17 +153,17 @@ class App extends Component {
     var { products } = this.state;
     var observations = JSON.parse(JSON.stringify(eyeonwater));
     var url =
-      "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_Zsd_lee.json";
+      "https://eawagrs.s3.eu-central-1.amazonaws.com/alplakes/metadata/sentinel3/geneva/Zsd_lee.json";
     if (parameter === "Couleur") {
       url =
-        "https://eawagrs.s3.eu-central-1.amazonaws.com/metadata/sentinel3/geneva_forel_ule.json";
+        "https://eawagrs.s3.eu-central-1.amazonaws.com/alplakes/metadata/sentinel3/geneva/forel_ule.json";
     }
     var { data: sentinel3 } = await axios.get(url);
     var max_pixels = d3.max(sentinel3.map((m) => parseFloat(m.p)));
     sentinel3 = sentinel3.map((m) => {
       m.unix = this.parseDatetime(m.dt).getTime();
       m.date = m.dt.slice(0, 8);
-      m.url = CONFIG.sencast_bucket + "/" + m.k;
+      m.url = CONFIG.sencast_bucket + "/alplakes/cropped/sentinel3/geneva/" + m.k;
       m.time = this.parseDatetime(m.dt);
       m.percent = Math.ceil((parseFloat(m.vp) / max_pixels) * 100);
       return m;
